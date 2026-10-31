@@ -1,0 +1,17 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+*/build
+.kotlin
+
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+output-metadata.json
+
+# Scratch scripts
+scratch/
