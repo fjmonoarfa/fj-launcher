@@ -62,14 +62,14 @@ fun PinnedAppsList(
             )
         }
     } else {
-        LazyColumn(
+        Column(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = horizontalAlign,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            items(pinnedApps, key = { it.packageName }) { app ->
+            pinnedApps.forEach { app ->
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

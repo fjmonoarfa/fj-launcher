@@ -7,7 +7,9 @@ data class LauncherPreferences(
     val showDate: Boolean = true,
     val showWeather: Boolean = false,
     val showPrayerTime: Boolean = false,
+    val clockApp: String = "Default",
     val pinnedAlignment: TextAlignment = TextAlignment.CENTER,
+    val pinnedVerticalAlignment: VerticalAlignment = VerticalAlignment.CENTER,
     val pinnedFontSizeSp: Float = 22f,
     val pinnedFontWeightBold: Boolean = false,
     val pinnedColorHex: String = "#FFFFFF",
@@ -16,9 +18,12 @@ data class LauncherPreferences(
     // Matrix Background Settings (GLMatrix xscreensaver)
     val matrixEnabled: Boolean = true,
     val matrixTheme: MatrixTheme = MatrixTheme.CLASSIC_GREEN,
+    val matrixMode: String = "matrix",
     val matrixSpeed: Float = 1.0f,
     val matrixDensity: Float = 1.0f,
     val matrix3DSway: Boolean = true,
+    val matrixWaves: Boolean = true,
+    val matrixFog: Boolean = true,
     val matrixDimmerAlpha: Float = 0.50f,
     
     // Apps Drawer Settings

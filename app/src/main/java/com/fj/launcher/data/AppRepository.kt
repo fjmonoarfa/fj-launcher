@@ -95,17 +95,6 @@ class AppRepository(
         }
     }
 
-    fun launchAppByPackageName(packageName: String) {
-        if (packageName.isBlank() || packageName.equals("None", ignoreCase = true)) return
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        if (launchIntent != null) {
-            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(launchIntent)
-        } else {
-            Toast.makeText(context, "Cannot launch app ($packageName)", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     fun openAppInfo(app: AppItem) {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:${app.packageName}")

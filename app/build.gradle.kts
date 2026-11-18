@@ -20,15 +20,6 @@ android {
         }
     }
 
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-            isUniversalApk = true
-        }
-    }
-
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -46,6 +37,15 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = true
+        }
     }
 
     packaging {
@@ -78,26 +78,29 @@ tasks.register("copyApkToRoot") {
     doNotTrackState("Copies APK to root directory")
     doLast {
         val apkDir = layout.buildDirectory.dir("outputs/apk/debug").get().asFile
-        if (apkDir.exists()) {
-            apkDir.listFiles()?.forEach { file ->
-                if (file.extension == "apk") {
-                    val destName = when {
-                        file.name.contains("universal") -> "fj-launcher-universal.apk"
-                        file.name.contains("arm64-v8a") -> "fj-launcher-arm64-v8a.apk"
-                        file.name.contains("armeabi-v7a") -> "fj-launcher-armeabi-v7a.apk"
-                        file.name.contains("x86_64") -> "fj-launcher-x86_64.apk"
-                        file.name.contains("x86") -> "fj-launcher-x86.apk"
-                        else -> "fj-launcher.apk"
-                    }
-                    val dest = File(rootProject.rootDir, destName)
-                    file.copyTo(dest, overwrite = true)
-                }
+        if (!apkDir.exists()) return@doLast
+
+        val abiMap = mapOf(
+            "app-arm64-v8a-debug.apk" to "fj-launcher-arm64-v8a.apk",
+            "app-armeabi-v7a-debug.apk" to "fj-launcher-armeabi-v7a.apk",
+            "app-x86-debug.apk" to "fj-launcher-x86.apk",
+            "app-x86_64-debug.apk" to "fj-launcher-x86_64.apk",
+            "app-universal-debug.apk" to "fj-launcher-universal.apk",
+            "app-debug.apk" to "fj-launcher.apk"
+        )
+
+        abiMap.forEach { (srcName, destName) ->
+            val src = File(apkDir, srcName)
+            if (src.exists()) {
+                val dest = File(rootProject.rootDir, destName)
+                src.copyTo(dest, overwrite = true)
             }
-            val universal = File(rootProject.rootDir, "fj-launcher-universal.apk")
-            val defaultApk = File(rootProject.rootDir, "fj-launcher.apk")
-            if (universal.exists()) {
-                universal.copyTo(defaultApk, overwrite = true)
-            }
+        }
+
+        val universalApk = File(apkDir, "app-universal-debug.apk")
+        val rootApk = File(rootProject.rootDir, "fj-launcher.apk")
+        if (universalApk.exists()) {
+            universalApk.copyTo(rootApk, overwrite = true)
         }
     }
 }

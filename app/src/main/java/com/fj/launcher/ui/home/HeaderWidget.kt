@@ -27,25 +27,16 @@ import java.util.*
 @Composable
 fun HeaderWidget(
     preferences: LauncherPreferences,
+    onClockClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var currentTime by remember { mutableStateOf(Date()) }
-    var weatherData by remember { mutableStateOf<String?>("29°C Cerah Berawan") }
 
     LaunchedEffect(Unit) {
         while (true) {
             currentTime = Date()
             delay(1000L)
-        }
-    }
-
-    LaunchedEffect(preferences.showWeather, preferences.latitude, preferences.longitude) {
-        if (preferences.showWeather) {
-            val weather = LocationHelper.fetchWeather(preferences.latitude, preferences.longitude)
-            if (weather != null) {
-                weatherData = weather
-            }
         }
     }
 
@@ -65,6 +56,14 @@ fun HeaderWidget(
         PrayerTimeCalculator.calculate(preferences.latitude, preferences.longitude)
     }
 
+    var weatherText by remember { mutableStateOf("Cerah Berawan") }
+    LaunchedEffect(preferences.showWeather, preferences.latitude, preferences.longitude) {
+        if (preferences.showWeather) {
+            val w = LocationHelper.fetchWeather(preferences.latitude, preferences.longitude)
+            if (w != null) weatherText = w
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -82,7 +81,7 @@ fun HeaderWidget(
                 letterSpacing = (-1).sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.clickable {
-                    openClockApp(context)
+                    onClockClick()
                 }
             )
         }
@@ -103,7 +102,7 @@ fun HeaderWidget(
             )
         }
 
-        // Optional Prayer Time (GPS based)
+        // Optional Prayer Time or Weather below date
         if (preferences.showPrayerTime) {
             val countdown = if (prayerSchedule.minutesUntilNext < 60) {
                 "${prayerSchedule.minutesUntilNext}m"
@@ -111,7 +110,7 @@ fun HeaderWidget(
                 "${prayerSchedule.minutesUntilNext / 60}j ${prayerSchedule.minutesUntilNext % 60}m"
             }
             Text(
-                text = "${prayerSchedule.nextPrayerName} ${prayerSchedule.nextPrayerTime} (-$countdown) • ${preferences.prayerCityName}",
+                text = "${prayerSchedule.nextPrayerName} ${prayerSchedule.nextPrayerTime} (-$countdown)",
                 color = Color(0xFF00FF41),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -120,10 +119,9 @@ fun HeaderWidget(
             )
         }
 
-        // Weather based on GPS location
         if (preferences.showWeather) {
             Text(
-                text = "${weatherData ?: "Cerah Berawan"} • ${preferences.prayerCityName}",
+                text = weatherText,
                 color = Color(0xFFA0A0A0),
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,

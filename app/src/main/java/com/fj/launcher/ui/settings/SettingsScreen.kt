@@ -2,21 +2,17 @@ package com.fj.launcher.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,64 +20,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.fj.launcher.data.LocationHelper
 import com.fj.launcher.model.AppItem
 import com.fj.launcher.model.LauncherPreferences
 import com.fj.launcher.model.MatrixTheme
 import com.fj.launcher.model.SortOrder
 import com.fj.launcher.model.TextAlignment
-import kotlinx.coroutines.launch
+import com.fj.launcher.model.VerticalAlignment
 import java.util.Locale
-
-enum class GestureTarget {
-    SWIPE_LEFT, SWIPE_RIGHT
-}
 
 @Composable
 fun SettingsScreen(
     preferences: LauncherPreferences,
-    hiddenApps: List<AppItem>,
     allApps: List<AppItem> = emptyList(),
+    hiddenApps: List<AppItem>,
     onUpdatePreferences: (LauncherPreferences) -> Unit,
     onUnhideApp: (AppItem) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     var showHiddenAppsDialog by remember { mutableStateOf(false) }
     var showAlignmentDialog by remember { mutableStateOf(false) }
+    var showVerticalAlignmentDialog by remember { mutableStateOf(false) }
+    var showModeDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-    var selectingGestureTarget by remember { mutableStateOf<GestureTarget?>(null) }
-    var isSyncingGps by remember { mutableStateOf(false) }
-
-    // Runtime Permission Launcher for GPS Location
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val granted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (granted) {
-            isSyncingGps = true
-            coroutineScope.launch {
-                val res = LocationHelper.getCurrentLocation(context)
-                if (res != null) {
-                    onUpdatePreferences(
-                        preferences.copy(
-                            latitude = res.latitude,
-                            longitude = res.longitude,
-                            prayerCityName = res.locationName
-                        )
-                    )
-                }
-                isSyncingGps = false
-            }
-        }
-    }
+    var appPickerTarget by remember { mutableStateOf<String?>(null) }
 
     Box(
         modifier = modifier
@@ -97,92 +66,83 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Header: Title & Back Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                TextButton(onClick = onBack) {
-                    Text("← Back", color = Color.White, fontSize = 16.sp)
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "FJ Launcher Settings",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Spacer(modifier = Modifier.width(48.dp))
-            }
-
-            // CARD 1: Default Launcher Status
+            // CARD 1: FJ Launcher Header Card (Matches Image 4)
             SettingsCard {
-                Text(
-                    text = "Default Launcher",
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Normal
-                )
-
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Set as default",
+                        text = "FJ Launcher",
                         color = Color.White,
-                        fontSize = 17.sp
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Normal
                     )
-                    Text(
-                        text = "Set",
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.clickable {
-                            openDefaultAppsSettings(context)
-                        }
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "About",
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+
+                SettingsActionRow(
+                    title = "Change default launcher",
+                    onClick = { openDefaultAppsSettings(context) }
+                )
+                SettingsActionRow(
+                    title = "About and FAQs",
+                    onClick = { /* Info */ }
+                )
+                SettingsActionRow(
+                    title = "More features...",
+                    onClick = { /* More features */ }
+                )
             }
 
-            // CARD 2: Home Screen
+            // CARD 2: Home screen (Matches Image 4)
             SettingsCard {
-                SectionTitle(title = "Home Screen")
+                SectionTitle(title = "Home screen")
 
                 SettingsValueRow(
-                    title = "Time",
-                    value = if (preferences.showClock) "On" else "Off",
+                    title = "Apps on home screen",
+                    value = "${preferences.maxHomeApps}",
                     onClick = {
-                        onUpdatePreferences(preferences.copy(showClock = !preferences.showClock))
+                        val next = if (preferences.maxHomeApps >= 10) 4 else preferences.maxHomeApps + 1
+                        onUpdatePreferences(preferences.copy(maxHomeApps = next))
                     }
                 )
 
                 SettingsValueRow(
-                    title = "24-hour time",
-                    value = if (preferences.is24HourClock) "On" else "Off",
+                    title = "Show date time",
+                    value = if (preferences.showClock && preferences.showDate) "On" else "Off",
                     onClick = {
-                        onUpdatePreferences(preferences.copy(is24HourClock = !preferences.is24HourClock))
+                        val turnOn = !(preferences.showClock && preferences.showDate)
+                        onUpdatePreferences(preferences.copy(showClock = turnOn, showDate = turnOn))
                     }
                 )
 
                 SettingsValueRow(
-                    title = "Date",
-                    value = if (preferences.showDate) "On" else "Off",
-                    onClick = {
-                        onUpdatePreferences(preferences.copy(showDate = !preferences.showDate))
-                    }
-                )
-
-                SettingsValueRow(
-                    title = "App alignment",
+                    title = "Horizontal align",
                     value = when (preferences.pinnedAlignment) {
                         TextAlignment.LEFT -> "Left"
                         TextAlignment.CENTER -> "Center"
                         TextAlignment.RIGHT -> "Right"
                     },
                     onClick = { showAlignmentDialog = true }
+                )
+
+                SettingsValueRow(
+                    title = "Vertical align",
+                    value = when (preferences.pinnedVerticalAlignment) {
+                        VerticalAlignment.TOP -> "Top"
+                        VerticalAlignment.CENTER -> "Center"
+                        VerticalAlignment.BOTTOM -> "Bottom"
+                    },
+                    onClick = { showVerticalAlignmentDialog = true }
                 )
 
                 SettingsValueRow(
@@ -202,7 +162,7 @@ fun SettingsScreen(
                 )
             }
 
-            // CARD 3: Appearance
+            // CARD 3: Appearance (Matches Image 4 & 5)
             SettingsCard {
                 SectionTitle(title = "Appearance")
 
@@ -223,12 +183,6 @@ fun SettingsScreen(
                 )
 
                 SettingsValueRow(
-                    title = "Theme mode",
-                    value = preferences.themeMode,
-                    onClick = { }
-                )
-
-                SettingsValueRow(
                     title = "Bold font",
                     value = if (preferences.pinnedFontWeightBold) "On" else "Off",
                     onClick = {
@@ -238,7 +192,7 @@ fun SettingsScreen(
 
                 SettingsValueRow(
                     title = "Text size",
-                    value = String.format(Locale.US, "%.1f", preferences.pinnedFontSizeSp / 22f),
+                    value = String.format("%.1f", preferences.pinnedFontSizeSp / 22f),
                     onClick = {
                         val nextSize = if (preferences.pinnedFontSizeSp >= 28f) 18f else preferences.pinnedFontSizeSp + 2f
                         onUpdatePreferences(preferences.copy(pinnedFontSizeSp = nextSize))
@@ -251,11 +205,23 @@ fun SettingsScreen(
                 SectionTitle(title = "GLMatrix (xscreensaver)")
 
                 SettingsValueRow(
-                    title = "Matrix rain background",
+                    title = "Matrix background",
                     value = if (preferences.matrixEnabled) "On" else "Off",
                     onClick = {
                         onUpdatePreferences(preferences.copy(matrixEnabled = !preferences.matrixEnabled))
                     }
+                )
+
+                SettingsValueRow(
+                    title = "Character mode",
+                    value = when (preferences.matrixMode.lowercase()) {
+                        "binary" -> "Binary"
+                        "hexadecimal" -> "Hex"
+                        "decimal" -> "Decimal"
+                        "dna" -> "DNA"
+                        else -> "Matrix"
+                    },
+                    onClick = { showModeDialog = true }
                 )
 
                 SettingsValueRow(
@@ -270,14 +236,47 @@ fun SettingsScreen(
                     onClick = { showThemeDialog = true }
                 )
 
-                // Slider untuk Matrix speed
+                var currentSpeed by remember(preferences.matrixSpeed) { mutableFloatStateOf(preferences.matrixSpeed) }
                 SettingsSliderRow(
                     title = "Matrix speed",
-                    valueText = "${String.format(Locale.US, "%.1f", preferences.matrixSpeed)}x",
-                    value = preferences.matrixSpeed,
+                    valueLabel = "${String.format(Locale.US, "%.1f", currentSpeed)}x",
+                    value = currentSpeed,
                     valueRange = 0.2f..3.0f,
-                    onValueChange = {
-                        onUpdatePreferences(preferences.copy(matrixSpeed = it))
+                    steps = 27,
+                    onValueChange = { currentSpeed = it },
+                    onValueChangeFinished = {
+                        val rounded = Math.round(currentSpeed * 10f) / 10f
+                        onUpdatePreferences(preferences.copy(matrixSpeed = rounded))
+                    }
+                )
+
+                var currentDensity by remember(preferences.matrixDensity) { mutableFloatStateOf(preferences.matrixDensity) }
+                SettingsSliderRow(
+                    title = "Matrix density",
+                    valueLabel = "${String.format(Locale.US, "%.1f", currentDensity)}x",
+                    value = currentDensity,
+                    valueRange = 0.5f..2.0f,
+                    steps = 14,
+                    onValueChange = { currentDensity = it },
+                    onValueChangeFinished = {
+                        val rounded = Math.round(currentDensity * 10f) / 10f
+                        onUpdatePreferences(preferences.copy(matrixDensity = rounded))
+                    }
+                )
+
+                SettingsValueRow(
+                    title = "Brightness waves",
+                    value = if (preferences.matrixWaves) "On" else "Off",
+                    onClick = {
+                        onUpdatePreferences(preferences.copy(matrixWaves = !preferences.matrixWaves))
+                    }
+                )
+
+                SettingsValueRow(
+                    title = "Depth fog",
+                    value = if (preferences.matrixFog) "On" else "Off",
+                    onClick = {
+                        onUpdatePreferences(preferences.copy(matrixFog = !preferences.matrixFog))
                     }
                 )
 
@@ -289,14 +288,17 @@ fun SettingsScreen(
                     }
                 )
 
-                // Slider untuk Background dimmer
+                var currentDimmer by remember(preferences.matrixDimmerAlpha) { mutableFloatStateOf(preferences.matrixDimmerAlpha) }
                 SettingsSliderRow(
                     title = "Background dimmer",
-                    valueText = "${(preferences.matrixDimmerAlpha * 100).toInt()}%",
-                    value = preferences.matrixDimmerAlpha,
-                    valueRange = 0.0f..0.95f,
-                    onValueChange = {
-                        onUpdatePreferences(preferences.copy(matrixDimmerAlpha = it))
+                    valueLabel = "${(currentDimmer * 100).toInt()}%",
+                    value = currentDimmer,
+                    valueRange = 0.0f..0.90f,
+                    steps = 17,
+                    onValueChange = { currentDimmer = it },
+                    onValueChangeFinished = {
+                        val rounded = Math.round(currentDimmer * 100f) / 100f
+                        onUpdatePreferences(preferences.copy(matrixDimmerAlpha = rounded))
                     }
                 )
             }
@@ -305,40 +307,22 @@ fun SettingsScreen(
             SettingsCard {
                 SectionTitle(title = "Gestures")
 
-                val swipeRightName = remember(preferences.swipeRightApp, allApps) {
-                    if (preferences.swipeRightApp.isBlank() || preferences.swipeRightApp.equals("None", ignoreCase = true)) {
-                        "None"
-                    } else {
-                        allApps.find { it.packageName == preferences.swipeRightApp }?.displayLabel ?: preferences.swipeRightApp
-                    }
-                }
-
-                val swipeLeftName = remember(preferences.swipeLeftApp, allApps) {
-                    if (preferences.swipeLeftApp.isBlank() || preferences.swipeLeftApp.equals("None", ignoreCase = true)) {
-                        "None"
-                    } else {
-                        allApps.find { it.packageName == preferences.swipeLeftApp }?.displayLabel ?: preferences.swipeLeftApp
-                    }
-                }
-
                 SettingsValueRow(
-                    title = "Geser dari kiri (Swipe Right)",
-                    value = swipeRightName,
-                    onClick = { selectingGestureTarget = GestureTarget.SWIPE_RIGHT }
+                    title = "Touch clock app",
+                    value = getAppDisplayLabel(preferences.clockApp, allApps, defaultLabel = "Default Clock"),
+                    onClick = { appPickerTarget = "clock" }
                 )
 
                 SettingsValueRow(
-                    title = "Geser dari kanan (Swipe Left)",
-                    value = swipeLeftName,
-                    onClick = { selectingGestureTarget = GestureTarget.SWIPE_LEFT }
+                    title = "Swipe left app",
+                    value = getAppDisplayLabel(preferences.swipeLeftApp, allApps),
+                    onClick = { appPickerTarget = "swipe_left" }
                 )
 
                 SettingsValueRow(
-                    title = "Double tap to lock",
-                    value = if (preferences.doubleTapToLock) "On" else "Off",
-                    onClick = {
-                        onUpdatePreferences(preferences.copy(doubleTapToLock = !preferences.doubleTapToLock))
-                    }
+                    title = "Swipe right app",
+                    value = getAppDisplayLabel(preferences.swipeRightApp, allApps),
+                    onClick = { appPickerTarget = "swipe_right" }
                 )
             }
 
@@ -373,86 +357,61 @@ fun SettingsScreen(
                 )
             }
 
-            // CARD 7: Waktu Sholat & Cuaca (GPS based)
+            // CARD 7: Waktu Sholat Kemenag RI
             SettingsCard {
-                SectionTitle(title = "Waktu Sholat & Cuaca")
+                SectionTitle(title = "Waktu Sholat")
 
                 val currentSchedule = remember(preferences.latitude, preferences.longitude) {
                     com.fj.launcher.data.PrayerTimeCalculator.calculate(preferences.latitude, preferences.longitude)
                 }
 
                 SettingsValueRow(
-                    title = "Lokasi GPS",
-                    value = if (isSyncingGps) "Mencari GPS..." else preferences.prayerCityName,
-                    onClick = {
-                        val hasFine = context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        val hasCoarse = context.checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                        if (hasFine || hasCoarse) {
-                            isSyncingGps = true
-                            coroutineScope.launch {
-                                val res = LocationHelper.getCurrentLocation(context)
-                                if (res != null) {
-                                    onUpdatePreferences(
-                                        preferences.copy(
-                                            latitude = res.latitude,
-                                            longitude = res.longitude,
-                                            prayerCityName = res.locationName
-                                        )
-                                    )
-                                }
-                                isSyncingGps = false
-                            }
-                        } else {
-                            locationPermissionLauncher.launch(
-                                arrayOf(
-                                    android.Manifest.permission.ACCESS_FINE_LOCATION,
-                                    android.Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
-                        }
-                    }
-                )
-
-                Text(
-                    text = "Koordinat: ${String.format(Locale.US, "%.4f, %.4f", preferences.latitude, preferences.longitude)} (Ketuk untuk update GPS)",
-                    color = Color(0xFF888888),
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(bottom = 2.dp)
+                    title = "Lokasi",
+                    value = if (preferences.prayerCityName.isNotBlank()) preferences.prayerCityName else "GPS (Otomatis)",
+                    onClick = { }
                 )
 
                 SettingsValueRow(
-                    title = "Metode Perhitungan",
+                    title = "Metode",
                     value = "Kemenag RI",
                     onClick = { }
                 )
 
                 HorizontalDivider(color = Color(0xFF222222), modifier = Modifier.padding(vertical = 4.dp))
 
-                // Live schedule preview for today
+                // Live schedule preview for today with balanced 3 columns
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = "Jadwal Hari Ini (${preferences.prayerCityName}):",
                         color = Color(0xFF888888),
-                        fontSize = 13.sp
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Subuh: ${currentSchedule.fajr}", color = Color(0xFF00FF41), fontSize = 13.sp)
-                        Text("Dzuhur: ${currentSchedule.dhuhr}", color = Color.White, fontSize = 13.sp)
-                        Text("Ashar: ${currentSchedule.asr}", color = Color.White, fontSize = 13.sp)
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("Terbit: ${currentSchedule.sunrise}", color = Color(0xFF888888), fontSize = 13.sp)
-                        Text("Maghrib: ${currentSchedule.maghrib}", color = Color.White, fontSize = 13.sp)
-                        Text("Isya: ${currentSchedule.isha}", color = Color.White, fontSize = 13.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Subuh: ${currentSchedule.fajr}", color = Color(0xFF00FF41), fontSize = 12.sp, maxLines = 1)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Terbit: ${currentSchedule.sunrise}", color = Color(0xFF888888), fontSize = 12.sp, maxLines = 1)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Dzuhur: ${currentSchedule.dhuhr}", color = Color.White, fontSize = 12.sp, maxLines = 1)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Ashar: ${currentSchedule.asr}", color = Color.White, fontSize = 12.sp, maxLines = 1)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Maghrib: ${currentSchedule.maghrib}", color = Color.White, fontSize = 12.sp, maxLines = 1)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("Isya: ${currentSchedule.isha}", color = Color.White, fontSize = 12.sp, maxLines = 1)
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Spacer(modifier = Modifier.height(24.dp))
         }
@@ -462,7 +421,7 @@ fun SettingsScreen(
     if (showAlignmentDialog) {
         AlertDialog(
             onDismissRequest = { showAlignmentDialog = false },
-            title = { Text("App Alignment") },
+            title = { Text("App Alignment (Horizontal)") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(
@@ -478,6 +437,37 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(label, color = if (preferences.pinnedAlignment == align) Color(0xFF00FF41) else Color.White)
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Vertical Alignment Dialog
+    if (showVerticalAlignmentDialog) {
+        AlertDialog(
+            onDismissRequest = { showVerticalAlignmentDialog = false },
+            title = { Text("App Alignment (Vertical)") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        VerticalAlignment.TOP to "Top (Vertical)",
+                        VerticalAlignment.CENTER to "Center (Vertical)",
+                        VerticalAlignment.BOTTOM to "Bottom (Vertical)"
+                    ).forEach { (align, label) ->
+                        TextButton(
+                            onClick = {
+                                onUpdatePreferences(preferences.copy(pinnedVerticalAlignment = align))
+                                showVerticalAlignmentDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = label,
+                                color = if (preferences.pinnedVerticalAlignment == align) Color(0xFF00FF41) else Color.White
+                            )
                         }
                     }
                 }
@@ -502,6 +492,36 @@ fun SettingsScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(theme.displayName, color = if (preferences.matrixTheme == theme) Color(0xFF00FF41) else Color.White)
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
+    }
+
+    // Character Mode Dialog (glmatrix original)
+    if (showModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showModeDialog = false },
+            title = { Text("Character Mode") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        "matrix" to "Matrix (Katakana & Digits)",
+                        "binary" to "Binary (0 & 1)",
+                        "hexadecimal" to "Hexadecimal (0-9, A-F)",
+                        "decimal" to "Decimal (0-9)",
+                        "dna" to "DNA (A, C, G, T)"
+                    ).forEach { (mode, label) ->
+                        TextButton(
+                            onClick = {
+                                onUpdatePreferences(preferences.copy(matrixMode = mode))
+                                showModeDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(label, color = if (preferences.matrixMode.equals(mode, ignoreCase = true)) Color(0xFF00FF41) else Color.White)
                         }
                     }
                 }
@@ -543,34 +563,164 @@ fun SettingsScreen(
         )
     }
 
-    // App Picker Dialog for Gestures
-    selectingGestureTarget?.let { target ->
-        val dialogTitle = if (target == GestureTarget.SWIPE_RIGHT) {
-            "Pilih Aplikasi (Geser dari Kiri)"
-        } else {
-            "Pilih Aplikasi (Geser dari Kanan)"
+    // App Picker Dialog (for Clock touch, Swipe Left, Swipe Right)
+    if (appPickerTarget != null) {
+        val target = appPickerTarget!!
+        val targetTitle = when (target) {
+            "clock" -> "Pilih Aplikasi untuk Jam"
+            "swipe_left" -> "Pilih Aplikasi Swipe Kiri"
+            "swipe_right" -> "Pilih Aplikasi Swipe Kanan"
+            else -> "Pilih Aplikasi"
         }
-        val currentSelected = if (target == GestureTarget.SWIPE_RIGHT) {
-            preferences.swipeRightApp
-        } else {
-            preferences.swipeLeftApp
+        val currentPackage = when (target) {
+            "clock" -> preferences.clockApp
+            "swipe_left" -> preferences.swipeLeftApp
+            "swipe_right" -> preferences.swipeRightApp
+            else -> ""
         }
 
-        AppPickerDialog(
-            title = dialogTitle,
-            currentSelected = currentSelected,
-            apps = allApps,
-            onDismiss = { selectingGestureTarget = null },
-            onSelect = { selectedPackage ->
-                if (target == GestureTarget.SWIPE_RIGHT) {
-                    onUpdatePreferences(preferences.copy(swipeRightApp = selectedPackage))
-                } else {
-                    onUpdatePreferences(preferences.copy(swipeLeftApp = selectedPackage))
+        var searchQuery by remember { mutableStateOf("") }
+        val filteredApps = remember(allApps, searchQuery) {
+            if (searchQuery.isBlank()) {
+                allApps.sortedBy { it.displayLabel.lowercase() }
+            } else {
+                allApps.filter { it.displayLabel.contains(searchQuery, ignoreCase = true) }
+                    .sortedBy { it.displayLabel.lowercase() }
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { appPickerTarget = null },
+            title = { Text(targetTitle) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Cari aplikasi...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = Color(0xFF00FF41),
+                            unfocusedBorderColor = Color(0xFF444444)
+                        )
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (target == "clock") {
+                            TextButton(
+                                onClick = {
+                                    onUpdatePreferences(preferences.copy(clockApp = "Default"))
+                                    appPickerTarget = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        "Default Alarm / Clock",
+                                        color = if (currentPackage == "Default" || currentPackage.isBlank()) Color(0xFF00FF41) else Color.White
+                                    )
+                                    if (currentPackage == "Default" || currentPackage.isBlank()) {
+                                        Text("✓", color = Color(0xFF00FF41))
+                                    }
+                                }
+                            }
+                        }
+
+                        TextButton(
+                            onClick = {
+                                when (target) {
+                                    "clock" -> onUpdatePreferences(preferences.copy(clockApp = "None"))
+                                    "swipe_left" -> onUpdatePreferences(preferences.copy(swipeLeftApp = "None"))
+                                    "swipe_right" -> onUpdatePreferences(preferences.copy(swipeRightApp = "None"))
+                                }
+                                appPickerTarget = null
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    "None (Nonaktifkan)",
+                                    color = if (currentPackage == "None") Color(0xFF00FF41) else Color(0xFFAAAAAA)
+                                )
+                                if (currentPackage == "None") {
+                                    Text("✓", color = Color(0xFF00FF41))
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = Color(0xFF333333))
+
+                        filteredApps.forEach { app ->
+                            val isSelected = currentPackage == app.packageName
+                            TextButton(
+                                onClick = {
+                                    when (target) {
+                                        "clock" -> onUpdatePreferences(preferences.copy(clockApp = app.packageName))
+                                        "swipe_left" -> onUpdatePreferences(preferences.copy(swipeLeftApp = app.packageName))
+                                        "swipe_right" -> onUpdatePreferences(preferences.copy(swipeRightApp = app.packageName))
+                                    }
+                                    appPickerTarget = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = app.displayLabel,
+                                        color = if (isSelected) Color(0xFF00FF41) else Color.White,
+                                        maxLines = 1
+                                    )
+                                    if (isSelected) {
+                                        Text("✓", color = Color(0xFF00FF41))
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                selectingGestureTarget = null
+            },
+            confirmButton = {
+                TextButton(onClick = { appPickerTarget = null }) {
+                    Text("Batal", color = Color.White)
+                }
             }
         )
     }
+}
+
+private fun getAppDisplayLabel(
+    packageName: String,
+    allApps: List<AppItem>,
+    defaultLabel: String = "None"
+): String {
+    if (packageName.isBlank() || packageName == "None") return "None"
+    if (packageName == "Default") return defaultLabel
+    return allApps.find { it.packageName == packageName }?.displayLabel ?: packageName
 }
 
 @Composable
@@ -614,21 +764,28 @@ private fun SettingsValueRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+            .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
             color = Color.White,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Normal
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false)
         )
+        Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = value,
-            color = Color.White,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.Medium
+            color = Color(0xFFCCCCCC),
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End
         )
     }
 }
@@ -636,15 +793,17 @@ private fun SettingsValueRow(
 @Composable
 private fun SettingsSliderRow(
     title: String,
-    valueText: String,
+    valueLabel: String,
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
-    onValueChange: (Float) -> Unit
+    steps: Int = 0,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp)
+            .padding(vertical = 4.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -654,146 +813,60 @@ private fun SettingsSliderRow(
             Text(
                 text = title,
                 color = Color.White,
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Normal
-            )
-            Text(
-                text = valueText,
-                color = Color.White,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = valueLabel,
+                color = Color(0xFFCCCCCC),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End
             )
         }
         Slider(
-            value = value,
+            value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
+            steps = steps,
             colors = SliderDefaults.colors(
                 thumbColor = Color.White,
                 activeTrackColor = Color.White,
                 inactiveTrackColor = Color(0xFF333333)
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp)
         )
     }
 }
 
 @Composable
-private fun AppPickerDialog(
+private fun SettingsActionRow(
     title: String,
-    currentSelected: String,
-    apps: List<AppItem>,
-    onDismiss: () -> Unit,
-    onSelect: (String) -> Unit
+    onClick: () -> Unit
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredApps = remember(apps, searchQuery) {
-        if (searchQuery.isBlank()) {
-            apps.sortedBy { it.displayLabel.lowercase() }
-        } else {
-            val q = searchQuery.trim().lowercase()
-            apps.filter {
-                it.displayLabel.lowercase().contains(q) || it.packageName.lowercase().contains(q)
-            }.sortedBy { it.displayLabel.lowercase() }
-        }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            color = Color.White,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Normal
+        )
     }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 420.dp)
-            ) {
-                // Search bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Cari aplikasi...", fontSize = 14.sp) },
-                    singleLine = true,
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color(0xFF00FF41),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-
-                LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Option "None"
-                    item {
-                        TextButton(
-                            onClick = { onSelect("None") },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "None (Tidak Ada / Nonaktifkan)",
-                                    color = if (currentSelected.isBlank() || currentSelected.equals("None", ignoreCase = true)) {
-                                        Color(0xFF00FF41)
-                                    } else {
-                                        Color.Gray
-                                    },
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                        HorizontalDivider(color = Color(0xFF262626), modifier = Modifier.padding(vertical = 4.dp))
-                    }
-
-                    items(filteredApps, key = { it.packageName }) { app ->
-                        val isSelected = currentSelected == app.packageName
-                        TextButton(
-                            onClick = { onSelect(app.packageName) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = app.displayLabel,
-                                    color = if (isSelected) Color(0xFF00FF41) else Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                if (isSelected) {
-                                    Text(
-                                        text = "Dipilih",
-                                        color = Color(0xFF00FF41),
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Batal", color = Color.Gray)
-            }
-        }
-    )
 }
 
 private fun openDefaultAppsSettings(context: Context) {

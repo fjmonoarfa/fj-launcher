@@ -30,6 +30,21 @@ class MatrixTextureLoader(private val context: Context) {
         192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207
     )
 
+    val binaryEncoding = intArrayOf(16, 17)
+    val decimalEncoding = intArrayOf(16, 17, 18, 19, 20, 21, 22, 23, 24, 25)
+    val hexEncoding = intArrayOf(16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 33, 34, 35, 36, 37, 38)
+    val dnaEncoding = intArrayOf(33, 35, 39, 52)
+
+    fun getEncoding(mode: String): IntArray {
+        return when (mode.lowercase()) {
+            "binary", "bin" -> binaryEncoding
+            "hex", "hexadecimal" -> hexEncoding
+            "dec", "decimal" -> decimalEncoding
+            "dna" -> dnaEncoding
+            else -> matrixEncoding
+        }
+    }
+
     fun load(): Boolean {
         try {
             val inputStream = context.assets.open("matrix3.png")

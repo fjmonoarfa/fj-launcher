@@ -9,6 +9,7 @@ import com.fj.launcher.model.LauncherPreferences
 import com.fj.launcher.model.MatrixTheme
 import com.fj.launcher.model.SortOrder
 import com.fj.launcher.model.TextAlignment
+import com.fj.launcher.model.VerticalAlignment
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
@@ -25,7 +26,9 @@ class PreferenceManager(private val context: Context) {
         val KEY_SHOW_DATE = booleanPreferencesKey("show_date")
         val KEY_SHOW_WEATHER = booleanPreferencesKey("show_weather")
         val KEY_SHOW_PRAYER = booleanPreferencesKey("show_prayer")
+        val KEY_CLOCK_APP = stringPreferencesKey("clock_app")
         val KEY_PINNED_ALIGNMENT = stringPreferencesKey("pinned_alignment")
+        val KEY_PINNED_VERTICAL_ALIGNMENT = stringPreferencesKey("pinned_vertical_alignment")
         val KEY_PINNED_FONT_SIZE = floatPreferencesKey("pinned_font_size")
         val KEY_PINNED_FONT_BOLD = booleanPreferencesKey("pinned_font_bold")
         val KEY_PINNED_COLOR = stringPreferencesKey("pinned_color")
@@ -34,9 +37,12 @@ class PreferenceManager(private val context: Context) {
         // Matrix
         val KEY_MATRIX_ENABLED = booleanPreferencesKey("matrix_enabled")
         val KEY_MATRIX_THEME = stringPreferencesKey("matrix_theme")
+        val KEY_MATRIX_MODE = stringPreferencesKey("matrix_mode")
         val KEY_MATRIX_SPEED = floatPreferencesKey("matrix_speed")
         val KEY_MATRIX_DENSITY = floatPreferencesKey("matrix_density")
         val KEY_MATRIX_SWAY = booleanPreferencesKey("matrix_sway")
+        val KEY_MATRIX_WAVES = booleanPreferencesKey("matrix_waves")
+        val KEY_MATRIX_FOG = booleanPreferencesKey("matrix_fog")
         val KEY_MATRIX_DIMMER = floatPreferencesKey("matrix_dimmer")
 
         // Drawer
@@ -71,9 +77,13 @@ class PreferenceManager(private val context: Context) {
             showDate = prefs[KEY_SHOW_DATE] ?: true,
             showWeather = prefs[KEY_SHOW_WEATHER] ?: false,
             showPrayerTime = prefs[KEY_SHOW_PRAYER] ?: false,
+            clockApp = prefs[KEY_CLOCK_APP] ?: "Default",
             pinnedAlignment = runCatching {
                 TextAlignment.valueOf(prefs[KEY_PINNED_ALIGNMENT] ?: TextAlignment.CENTER.name)
             }.getOrDefault(TextAlignment.CENTER),
+            pinnedVerticalAlignment = runCatching {
+                VerticalAlignment.valueOf(prefs[KEY_PINNED_VERTICAL_ALIGNMENT] ?: VerticalAlignment.CENTER.name)
+            }.getOrDefault(VerticalAlignment.CENTER),
             pinnedFontSizeSp = prefs[KEY_PINNED_FONT_SIZE] ?: 22f,
             pinnedFontWeightBold = prefs[KEY_PINNED_FONT_BOLD] ?: false,
             pinnedColorHex = prefs[KEY_PINNED_COLOR] ?: "#FFFFFF",
@@ -82,9 +92,12 @@ class PreferenceManager(private val context: Context) {
             matrixTheme = runCatching {
                 MatrixTheme.valueOf(prefs[KEY_MATRIX_THEME] ?: MatrixTheme.CLASSIC_GREEN.name)
             }.getOrDefault(MatrixTheme.CLASSIC_GREEN),
+            matrixMode = prefs[KEY_MATRIX_MODE] ?: "matrix",
             matrixSpeed = prefs[KEY_MATRIX_SPEED] ?: 1.0f,
             matrixDensity = prefs[KEY_MATRIX_DENSITY] ?: 1.0f,
             matrix3DSway = prefs[KEY_MATRIX_SWAY] ?: true,
+            matrixWaves = prefs[KEY_MATRIX_WAVES] ?: true,
+            matrixFog = prefs[KEY_MATRIX_FOG] ?: true,
             matrixDimmerAlpha = prefs[KEY_MATRIX_DIMMER] ?: 0.50f,
             drawerSortOrder = runCatching {
                 SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
@@ -110,9 +123,13 @@ class PreferenceManager(private val context: Context) {
                 showDate = prefs[KEY_SHOW_DATE] ?: true,
                 showWeather = prefs[KEY_SHOW_WEATHER] ?: false,
                 showPrayerTime = prefs[KEY_SHOW_PRAYER] ?: false,
+                clockApp = prefs[KEY_CLOCK_APP] ?: "Default",
                 pinnedAlignment = runCatching {
                     TextAlignment.valueOf(prefs[KEY_PINNED_ALIGNMENT] ?: TextAlignment.CENTER.name)
                 }.getOrDefault(TextAlignment.CENTER),
+                pinnedVerticalAlignment = runCatching {
+                    VerticalAlignment.valueOf(prefs[KEY_PINNED_VERTICAL_ALIGNMENT] ?: VerticalAlignment.CENTER.name)
+                }.getOrDefault(VerticalAlignment.CENTER),
                 pinnedFontSizeSp = prefs[KEY_PINNED_FONT_SIZE] ?: 22f,
                 pinnedFontWeightBold = prefs[KEY_PINNED_FONT_BOLD] ?: false,
                 pinnedColorHex = prefs[KEY_PINNED_COLOR] ?: "#FFFFFF",
@@ -121,9 +138,12 @@ class PreferenceManager(private val context: Context) {
                 matrixTheme = runCatching {
                     MatrixTheme.valueOf(prefs[KEY_MATRIX_THEME] ?: MatrixTheme.CLASSIC_GREEN.name)
                 }.getOrDefault(MatrixTheme.CLASSIC_GREEN),
+                matrixMode = prefs[KEY_MATRIX_MODE] ?: "matrix",
                 matrixSpeed = prefs[KEY_MATRIX_SPEED] ?: 1.0f,
                 matrixDensity = prefs[KEY_MATRIX_DENSITY] ?: 1.0f,
                 matrix3DSway = prefs[KEY_MATRIX_SWAY] ?: true,
+                matrixWaves = prefs[KEY_MATRIX_WAVES] ?: true,
+                matrixFog = prefs[KEY_MATRIX_FOG] ?: true,
                 matrixDimmerAlpha = prefs[KEY_MATRIX_DIMMER] ?: 0.50f,
                 drawerSortOrder = runCatching {
                     SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
@@ -146,16 +166,21 @@ class PreferenceManager(private val context: Context) {
             prefs[KEY_SHOW_DATE] = updated.showDate
             prefs[KEY_SHOW_WEATHER] = updated.showWeather
             prefs[KEY_SHOW_PRAYER] = updated.showPrayerTime
+            prefs[KEY_CLOCK_APP] = updated.clockApp
             prefs[KEY_PINNED_ALIGNMENT] = updated.pinnedAlignment.name
+            prefs[KEY_PINNED_VERTICAL_ALIGNMENT] = updated.pinnedVerticalAlignment.name
             prefs[KEY_PINNED_FONT_SIZE] = updated.pinnedFontSizeSp
             prefs[KEY_PINNED_FONT_BOLD] = updated.pinnedFontWeightBold
             prefs[KEY_PINNED_COLOR] = updated.pinnedColorHex
             prefs[KEY_MAX_HOME_APPS] = updated.maxHomeApps
             prefs[KEY_MATRIX_ENABLED] = updated.matrixEnabled
             prefs[KEY_MATRIX_THEME] = updated.matrixTheme.name
+            prefs[KEY_MATRIX_MODE] = updated.matrixMode
             prefs[KEY_MATRIX_SPEED] = updated.matrixSpeed
             prefs[KEY_MATRIX_DENSITY] = updated.matrixDensity
             prefs[KEY_MATRIX_SWAY] = updated.matrix3DSway
+            prefs[KEY_MATRIX_WAVES] = updated.matrixWaves
+            prefs[KEY_MATRIX_FOG] = updated.matrixFog
             prefs[KEY_MATRIX_DIMMER] = updated.matrixDimmerAlpha
             prefs[KEY_DRAWER_SORT] = updated.drawerSortOrder.name
             prefs[KEY_DRAWER_FOLDER_FIRST] = updated.drawerFolderFirst

@@ -16,17 +16,28 @@ class GLMatrixView @JvmOverloads constructor(
         setEGLContextClientVersion(2)
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         holder.setFormat(PixelFormat.TRANSLUCENT)
+        preserveEGLContextOnPause = true
         setRenderer(renderer)
         renderMode = RENDERMODE_CONTINUOUSLY
     }
 
     fun pauseRendering() {
         renderer.state.isPaused.set(true)
-        onPause()
+        renderMode = RENDERMODE_WHEN_DIRTY
     }
 
     fun resumeRendering() {
         renderer.state.isPaused.set(false)
+        renderMode = RENDERMODE_CONTINUOUSLY
+    }
+
+    fun onActivityPause() {
+        pauseRendering()
+        onPause()
+    }
+
+    fun onActivityResume() {
         onResume()
+        resumeRendering()
     }
 }

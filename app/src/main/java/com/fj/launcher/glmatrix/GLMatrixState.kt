@@ -14,6 +14,9 @@ class GLMatrixState {
     var density: Float = 1.0f
     var cameraSwayEnabled: Boolean = true
     var dimmerAlpha: Float = 0.55f
+    var mode: String = "matrix" // "matrix", "binary", "hexadecimal", "decimal", "dna"
+    var wavesEnabled: Boolean = true
+    var fogEnabled: Boolean = true
 
     val isPaused: AtomicBoolean = AtomicBoolean(false)
 

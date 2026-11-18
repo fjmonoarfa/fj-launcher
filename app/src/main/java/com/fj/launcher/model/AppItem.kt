@@ -7,6 +7,10 @@ enum class TextAlignment {
     LEFT, CENTER, RIGHT
 }
 
+enum class VerticalAlignment {
+    TOP, CENTER, BOTTOM
+}
+
 enum class SortOrder {
     A_TO_Z, Z_TO_A
 }

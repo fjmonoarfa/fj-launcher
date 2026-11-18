@@ -122,7 +122,9 @@ class GLMatrixRenderer(
         aColorHandle = GLES20.glGetAttribLocation(programId, "a_Color")
 
         initBuffers()
-        initStrips()
+        if (strips.isEmpty()) {
+            initStrips()
+        }
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -131,7 +133,9 @@ class GLMatrixRenderer(
 
         // gluPerspective (80.0, 1/h, 1.0, 100) from glmatrix.c reshape_matrix
         Matrix.perspectiveM(projMatrix, 0, 78f, aspectRatio, 1f, 100f)
-        initStrips()
+        if (strips.isEmpty()) {
+            initStrips()
+        }
     }
 
     private fun initBuffers() {
@@ -163,7 +167,7 @@ class GLMatrixRenderer(
     }
 
     private fun randomGlyph(): Int {
-        val encoding = textureLoader.matrixEncoding
+        val encoding = textureLoader.getEncoding(state.mode)
         return encoding[random.nextInt(encoding.size)] + 1
     }
 
@@ -333,8 +337,12 @@ class GLMatrixRenderer(
             }
 
             // Depth fog calculation from glmatrix.c
-            val depthRatio = (s.z / GRID_DEPTH) + 0.5f
-            val depthScale = 0.2f + (depthRatio.coerceIn(0f, 1f) * 0.8f)
+            val depthScale = if (state.fogEnabled) {
+                val depthRatio = (s.z / GRID_DEPTH) + 0.5f
+                0.2f + (depthRatio.coerceIn(0f, 1f) * 0.8f)
+            } else {
+                1.0f
+            }
 
             // Splash fade near camera
             var splashFade = 1.0f
@@ -353,8 +361,12 @@ class GLMatrixRenderer(
                 if (s.erasing) belowP = !belowP
 
                 if (g != 0 && belowP) {
-                    val waveIdx = WAVE_SIZE - ((i + (GRID_SIZE - s.wavePosition)) % WAVE_SIZE)
-                    var b = brightnessRamp[waveIdx.coerceIn(0, WAVE_SIZE - 1)]
+                    var b = if (state.wavesEnabled) {
+                        val waveIdx = WAVE_SIZE - ((i + (GRID_SIZE - s.wavePosition)) % WAVE_SIZE)
+                        brightnessRamp[waveIdx.coerceIn(0, WAVE_SIZE - 1)]
+                    } else {
+                        1.0f
+                    }
                     b *= depthScale * splashFade
 
                     val rCol = state.primaryR * b * dimmer

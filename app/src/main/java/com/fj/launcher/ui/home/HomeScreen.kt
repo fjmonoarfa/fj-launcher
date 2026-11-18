@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.fj.launcher.model.AppItem
 import com.fj.launcher.model.LauncherPreferences
+import com.fj.launcher.model.VerticalAlignment
+import kotlin.math.abs
 
 @Composable
 fun HomeScreen(
@@ -20,10 +22,11 @@ fun HomeScreen(
     pinnedApps: List<AppItem>,
     onAppClick: (AppItem) -> Unit,
     onAppLongClick: (AppItem) -> Unit,
+    onClockClick: () -> Unit,
+    onSwipeLeft: () -> Unit,
+    onSwipeRight: () -> Unit,
     onOpenDrawer: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSwipeLeft: () -> Unit = {},
-    onSwipeRight: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -43,9 +46,7 @@ fun HomeScreen(
                     }
                 )
             }
-            // Swipe gestures:
-            // Vertical: UP -> Drawer, DOWN -> Notifications
-            // Horizontal: LEFT (Geser ke kiri / dari kanan), RIGHT (Geser ke kanan / dari kiri)
+            // Swipe gestures (Vertical & Horizontal)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = {
@@ -53,30 +54,25 @@ fun HomeScreen(
                         totalDragY = 0f
                     },
                     onDragEnd = {
-                        val absX = kotlin.math.abs(totalDragX)
-                        val absY = kotlin.math.abs(totalDragY)
-                        val threshold = 75f
-
-                        if (absX > absY && absX > threshold) {
+                        val absX = abs(totalDragX)
+                        val absY = abs(totalDragY)
+                        if (absX > absY && absX > 60f) {
                             if (totalDragX > 0f) {
-                                // Geser dari kiri ke kanan -> Swipe Right
                                 onSwipeRight()
                             } else {
-                                // Geser dari kanan ke kiri -> Swipe Left
                                 onSwipeLeft()
                             }
-                        } else if (absY > absX && absY > threshold) {
-                            if (totalDragY < -threshold) {
+                        } else if (absY > 60f) {
+                            if (totalDragY < -60f) {
                                 onOpenDrawer()
-                            } else if (totalDragY > threshold) {
+                            } else if (totalDragY > 60f) {
                                 expandNotifications(context)
                             }
                         }
                         totalDragX = 0f
                         totalDragY = 0f
                     },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
+                    onDrag = { _, dragAmount ->
                         totalDragX += dragAmount.x
                         totalDragY += dragAmount.y
                     }
@@ -92,21 +88,46 @@ fun HomeScreen(
             // Header Widget (Clock & Date - Centered as in Image 1)
             HeaderWidget(
                 preferences = preferences,
+                onClockClick = onClockClick,
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.weight(0.7f))
-
-            // Centered Pinned Apps List
-            PinnedAppsList(
-                pinnedApps = pinnedApps,
-                preferences = preferences,
-                onAppClick = onAppClick,
-                onAppLongClick = onAppLongClick,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.weight(1.3f))
+            // Pinned Apps with configurable vertical alignment: Top, Center, or Bottom
+            when (preferences.pinnedVerticalAlignment) {
+                VerticalAlignment.TOP -> {
+                    Spacer(modifier = Modifier.height(28.dp))
+                    PinnedAppsList(
+                        pinnedApps = pinnedApps,
+                        preferences = preferences,
+                        onAppClick = onAppClick,
+                        onAppLongClick = onAppLongClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                VerticalAlignment.CENTER -> {
+                    Spacer(modifier = Modifier.weight(1f))
+                    PinnedAppsList(
+                        pinnedApps = pinnedApps,
+                        preferences = preferences,
+                        onAppClick = onAppClick,
+                        onAppLongClick = onAppLongClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                VerticalAlignment.BOTTOM -> {
+                    Spacer(modifier = Modifier.weight(1f))
+                    PinnedAppsList(
+                        pinnedApps = pinnedApps,
+                        preferences = preferences,
+                        onAppClick = onAppClick,
+                        onAppLongClick = onAppLongClick,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(36.dp))
+                }
+            }
         }
     }
 }
