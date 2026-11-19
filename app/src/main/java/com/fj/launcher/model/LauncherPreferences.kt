@@ -7,6 +7,7 @@ data class LauncherPreferences(
     val showDate: Boolean = true,
     val showWeather: Boolean = false,
     val showPrayerTime: Boolean = false,
+    val showDataUsage: Boolean = true,
     val clockApp: String = "Default",
     val pinnedAlignment: TextAlignment = TextAlignment.CENTER,
     val pinnedVerticalAlignment: VerticalAlignment = VerticalAlignment.CENTER,

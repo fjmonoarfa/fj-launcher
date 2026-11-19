@@ -362,7 +362,8 @@ class GLMatrixRenderer(
 
                 if (g != 0 && belowP) {
                     var b = if (state.wavesEnabled) {
-                        val waveIdx = WAVE_SIZE - ((i + (GRID_SIZE - s.wavePosition)) % WAVE_SIZE)
+                        val offset = (i + (GRID_SIZE - s.wavePosition)) % WAVE_SIZE
+                        val waveIdx = (WAVE_SIZE - 1) - offset
                         brightnessRamp[waveIdx.coerceIn(0, WAVE_SIZE - 1)]
                     } else {
                         1.0f
@@ -391,11 +392,16 @@ class GLMatrixRenderer(
                 val qy = s.y - s.spinnerY
                 val qz = s.z
 
-                // Leading head glows white/pastel as in the film and glmatrix.c
-                val headR = 0.95f * dimmer
-                val headG = 1.0f * dimmer
-                val headB = 0.95f * dimmer
-                val headA = 1.0f * dimmer
+                // Leading head glows bright green (or bright theme color) instead of white
+                val headScale = if (state.fogEnabled) {
+                    (0.4f + depthScale * 0.6f) * splashFade
+                } else {
+                    splashFade
+                }
+                val headR = state.headR * headScale * dimmer
+                val headG = state.headG * headScale * dimmer
+                val headB = state.headB * headScale * dimmer
+                val headA = (headScale * dimmer).coerceIn(0.1f, 1.0f)
 
                 vIndex = putQuad(vIndex, qx, qy, qz, quadSize, headUvs, headR, headG, headB, headA)
                 quadCount++

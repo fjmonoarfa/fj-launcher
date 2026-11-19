@@ -26,6 +26,7 @@ class PreferenceManager(private val context: Context) {
         val KEY_SHOW_DATE = booleanPreferencesKey("show_date")
         val KEY_SHOW_WEATHER = booleanPreferencesKey("show_weather")
         val KEY_SHOW_PRAYER = booleanPreferencesKey("show_prayer")
+        val KEY_SHOW_DATA_USAGE = booleanPreferencesKey("show_data_usage")
         val KEY_CLOCK_APP = stringPreferencesKey("clock_app")
         val KEY_PINNED_ALIGNMENT = stringPreferencesKey("pinned_alignment")
         val KEY_PINNED_VERTICAL_ALIGNMENT = stringPreferencesKey("pinned_vertical_alignment")
@@ -77,6 +78,7 @@ class PreferenceManager(private val context: Context) {
             showDate = prefs[KEY_SHOW_DATE] ?: true,
             showWeather = prefs[KEY_SHOW_WEATHER] ?: false,
             showPrayerTime = prefs[KEY_SHOW_PRAYER] ?: false,
+            showDataUsage = prefs[KEY_SHOW_DATA_USAGE] ?: true,
             clockApp = prefs[KEY_CLOCK_APP] ?: "Default",
             pinnedAlignment = runCatching {
                 TextAlignment.valueOf(prefs[KEY_PINNED_ALIGNMENT] ?: TextAlignment.CENTER.name)
@@ -123,6 +125,7 @@ class PreferenceManager(private val context: Context) {
                 showDate = prefs[KEY_SHOW_DATE] ?: true,
                 showWeather = prefs[KEY_SHOW_WEATHER] ?: false,
                 showPrayerTime = prefs[KEY_SHOW_PRAYER] ?: false,
+                showDataUsage = prefs[KEY_SHOW_DATA_USAGE] ?: true,
                 clockApp = prefs[KEY_CLOCK_APP] ?: "Default",
                 pinnedAlignment = runCatching {
                     TextAlignment.valueOf(prefs[KEY_PINNED_ALIGNMENT] ?: TextAlignment.CENTER.name)
@@ -166,6 +169,7 @@ class PreferenceManager(private val context: Context) {
             prefs[KEY_SHOW_DATE] = updated.showDate
             prefs[KEY_SHOW_WEATHER] = updated.showWeather
             prefs[KEY_SHOW_PRAYER] = updated.showPrayerTime
+            prefs[KEY_SHOW_DATA_USAGE] = updated.showDataUsage
             prefs[KEY_CLOCK_APP] = updated.clockApp
             prefs[KEY_PINNED_ALIGNMENT] = updated.pinnedAlignment.name
             prefs[KEY_PINNED_VERTICAL_ALIGNMENT] = updated.pinnedVerticalAlignment.name

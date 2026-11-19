@@ -28,6 +28,14 @@ class GLMatrixState {
     var primaryB: Float = 0.25f
         private set
 
+    // Current leading head (brightest tip) color RGB (0.0f - 1.0f)
+    var headR: Float = 0.2f
+        private set
+    var headG: Float = 1.0f
+        private set
+    var headB: Float = 0.35f
+        private set
+
     init {
         updateColors()
     }
@@ -38,26 +46,41 @@ class GLMatrixState {
                 primaryR = 0.0f
                 primaryG = 1.0f
                 primaryB = 0.25f
+                headR = 0.2f
+                headG = 1.0f
+                headB = 0.35f
             }
             MatrixTheme.CYBERPUNK_CYAN -> {
                 primaryR = 0.0f
                 primaryG = 0.94f
                 primaryB = 1.0f
+                headR = 0.35f
+                headG = 1.0f
+                headB = 1.0f
             }
             MatrixTheme.GOLDEN_AMBER -> {
                 primaryR = 1.0f
                 primaryG = 0.69f
                 primaryB = 0.0f
+                headR = 1.0f
+                headG = 0.92f
+                headB = 0.35f
             }
             MatrixTheme.BLOOD_RED -> {
                 primaryR = 1.0f
                 primaryG = 0.2f
                 primaryB = 0.2f
+                headR = 1.0f
+                headG = 0.5f
+                headB = 0.5f
             }
             MatrixTheme.HACKER_WHITE -> {
                 primaryR = 0.95f
                 primaryG = 0.95f
                 primaryB = 0.95f
+                headR = 1.0f
+                headG = 1.0f
+                headB = 1.0f
             }
         }
     }

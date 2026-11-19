@@ -160,6 +160,14 @@ fun SettingsScreen(
                         onUpdatePreferences(preferences.copy(showWeather = !preferences.showWeather))
                     }
                 )
+
+                SettingsValueRow(
+                    title = "Data usage",
+                    value = if (preferences.showDataUsage) "On" else "Off",
+                    onClick = {
+                        onUpdatePreferences(preferences.copy(showDataUsage = !preferences.showDataUsage))
+                    }
+                )
             }
 
             // CARD 3: Appearance (Matches Image 4 & 5)

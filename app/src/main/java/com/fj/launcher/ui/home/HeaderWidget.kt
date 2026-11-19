@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.fj.launcher.data.DataUsageHelper
 import com.fj.launcher.data.LocationHelper
 import com.fj.launcher.data.PrayerTimeCalculator
 import com.fj.launcher.model.LauncherPreferences
@@ -61,6 +62,16 @@ fun HeaderWidget(
         if (preferences.showWeather) {
             val w = LocationHelper.fetchWeather(preferences.latitude, preferences.longitude)
             if (w != null) weatherText = w
+        }
+    }
+
+    var dataUsageText by remember { mutableStateOf("") }
+    LaunchedEffect(preferences.showDataUsage) {
+        if (preferences.showDataUsage) {
+            while (true) {
+                dataUsageText = DataUsageHelper.getDataUsageSummary(context)
+                delay(15000L)
+            }
         }
     }
 
@@ -126,6 +137,20 @@ fun HeaderWidget(
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        if (preferences.showDataUsage && dataUsageText.isNotBlank()) {
+            Text(
+                text = dataUsageText,
+                color = Color(0xFFA0A0A0),
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .clickable {
+                        DataUsageHelper.openDataSettings(context)
+                    }
             )
         }
     }
