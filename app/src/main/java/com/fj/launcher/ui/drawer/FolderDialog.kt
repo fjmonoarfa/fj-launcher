@@ -1,22 +1,24 @@
 package com.fj.launcher.ui.drawer
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.fj.launcher.model.AppFolder
@@ -134,12 +136,19 @@ fun AssignFolderDialog(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Folder,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
                             Text(
-                                text = "📁 ${folder.name}",
-                                color = Color.White
+                                text = folder.name,
+                                color = Color.White,
+                                modifier = Modifier.weight(1f)
                             )
                             if (isCurrent) {
                                 Text("✓ (Aktif)", color = Color.White, fontSize = 12.sp)
@@ -171,6 +180,181 @@ fun AssignFolderDialog(
     )
 }
 
+@Composable
+fun FolderOptionsDialog(
+    folder: AppFolder,
+    onDismiss: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF161616),
+        titleContentColor = Color.White,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = folder.name,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        onRename()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Ganti Nama",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text("Ganti Nama Folder", color = Color.White, fontSize = 16.sp)
+                    }
+                }
+
+                HorizontalDivider(color = Color(0xFF262626))
+
+                TextButton(
+                    onClick = {
+                        onDismiss()
+                        onDelete()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Hapus Folder",
+                            tint = Color(0xFFFF5252),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Text("Hapus Folder", color = Color(0xFFFF5252), fontSize = 16.sp)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal", color = Color.Gray)
+            }
+        }
+    )
+}
+
+@Composable
+fun RenameFolderDialog(
+    folder: AppFolder,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var newName by remember { mutableStateOf(folder.name) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF161616),
+        titleContentColor = Color.White,
+        title = { Text("Ganti Nama Folder", color = Color.White) },
+        text = {
+            OutlinedTextField(
+                value = newName,
+                onValueChange = { newName = it },
+                label = { Text("Nama Folder") },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = Color.White,
+                    unfocusedBorderColor = Color(0xFF444444)
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (newName.isNotBlank()) {
+                        onConfirm(newName.trim())
+                        onDismiss()
+                    }
+                }
+            ) {
+                Text("Simpan", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal", color = Color.Gray)
+            }
+        }
+    )
+}
+
+@Composable
+fun DeleteFolderConfirmationDialog(
+    folder: AppFolder,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF161616),
+        title = { Text("Hapus Folder?", color = Color.White) },
+        text = {
+            Text(
+                "Folder \"${folder.name}\" akan dihapus. Aplikasi di dalamnya tidak akan terhapus dan akan kembali ke daftar utama.",
+                color = Color(0xFFCCCCCC),
+                fontSize = 14.sp
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm()
+                    onDismiss()
+                }
+            ) {
+                Text("Hapus", color = Color(0xFFFF5252))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Batal", color = Color.Gray)
+            }
+        }
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun FolderContentSheet(
@@ -179,13 +363,28 @@ fun FolderContentSheet(
     folders: List<AppFolder> = emptyList(),
     onDismiss: () -> Unit,
     onAppClick: (AppItem) -> Unit,
-    onAppLongClick: (AppItem) -> Unit = {},
+    onTogglePin: (AppItem) -> Unit = {},
+    onRenameApp: (AppItem, String) -> Unit = { _, _ -> },
+    onHideApp: (AppItem) -> Unit = {},
+    onOpenInfo: (AppItem) -> Unit = {},
+    onUninstall: (AppItem) -> Unit = {},
     onAssignFolder: (AppItem, String?) -> Unit = { _, _ -> },
     onCreateFolder: (AppFolder) -> Unit = {},
+    onRenameFolder: (AppFolder, String) -> Unit = { _, _ -> },
     onDeleteFolder: (AppFolder) -> Unit
 ) {
-    var appToManage by remember { mutableStateOf<AppItem?>(null) }
+    val currentFolder = remember(folders, folder) {
+        folders.find { it.id == folder.id } ?: folder
+    }
+
+    var expandedAppPackage by remember { mutableStateOf<String?>(null) }
+    var appToRename by remember { mutableStateOf<AppItem?>(null) }
+    var appToAssignFolder by remember { mutableStateOf<AppItem?>(null) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
+
+    var showFolderOptions by remember { mutableStateOf(false) }
+    var showRenameFolderDialog by remember { mutableStateOf(false) }
+    var showDeleteFolderConfirm by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -197,31 +396,50 @@ fun FolderContentSheet(
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp, vertical = 8.dp)
         ) {
+            // Folder title matching the main drawer style & color, long-click shows rename/delete options
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = { showFolderOptions = true }
+                    )
+                    .padding(vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // Monochrome B/W Folder title
-                Text(
-                    text = "📁 ${folder.name}",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                Icon(
+                    imageVector = Icons.Default.Folder,
+                    contentDescription = currentFolder.name,
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
                 )
-
-                IconButton(onClick = { onDeleteFolder(folder); onDismiss() }) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Hapus Folder",
-                        tint = Color.White
+                Text(
+                    text = currentFolder.name,
+                    color = Color.White,
+                    fontSize = 21.sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Surface(
+                    color = Color(0xFF1E1E1E),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "${appsInFolder.size}",
+                        color = Color(0xFFAAAAAA),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
             }
 
             HorizontalDivider(
                 color = Color(0xFF242424),
-                modifier = Modifier.padding(vertical = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             if (appsInFolder.isEmpty()) {
@@ -234,34 +452,58 @@ fun FolderContentSheet(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    items(appsInFolder, key = { it.packageName }) { app ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = { onAppClick(app) },
-                                    onLongClick = { appToManage = app }
-                                )
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = app.displayLabel,
-                                color = Color.White,
-                                fontSize = 17.sp,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { appToManage = app }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.DriveFileMove,
-                                    contentDescription = "Pindah / Keluarkan",
-                                    tint = Color(0xFFAAAAAA),
-                                    modifier = Modifier.size(20.dp)
-                                )
+                    items(
+                        items = appsInFolder,
+                        key = { it.packageName },
+                        contentType = { "folder_app_item" }
+                    ) { app ->
+                        val isExpanded = expandedAppPackage == app.packageName
+                        DrawerAppItem(
+                            app = app,
+                            isExpanded = isExpanded,
+                            onItemClick = {
+                                if (isExpanded) {
+                                    expandedAppPackage = null
+                                } else {
+                                    onDismiss()
+                                    onAppClick(app)
+                                }
+                            },
+                            onItemLongClick = {
+                                expandedAppPackage = if (isExpanded) null else app.packageName
+                            },
+                            onUninstall = {
+                                expandedAppPackage = null
+                                onDismiss()
+                                onUninstall(app)
+                            },
+                            onRename = {
+                                expandedAppPackage = null
+                                appToRename = app
+                            },
+                            onFolder = {
+                                expandedAppPackage = null
+                                appToAssignFolder = app
+                            },
+                            onTogglePin = {
+                                onTogglePin(app)
+                            },
+                            onHide = {
+                                expandedAppPackage = null
+                                onDismiss()
+                                onHideApp(app)
+                            },
+                            onInfo = {
+                                expandedAppPackage = null
+                                onDismiss()
+                                onOpenInfo(app)
+                            },
+                            onClose = {
+                                expandedAppPackage = null
                             }
-                        }
+                        )
                     }
                 }
             }
@@ -270,15 +512,87 @@ fun FolderContentSheet(
         }
     }
 
-    // Dialog to Move or Remove app from folder
-    appToManage?.let { targetApp ->
+    // Rename App Dialog
+    appToRename?.let { app ->
+        var newName by remember { mutableStateOf(app.displayLabel) }
+        AlertDialog(
+            onDismissRequest = { appToRename = null },
+            containerColor = Color(0xFF161616),
+            title = { Text("Rename Aplikasi", color = Color.White) },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text("Nama Baru") },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White,
+                        unfocusedBorderColor = Color(0xFF444444)
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRenameApp(app, newName.trim())
+                        appToRename = null
+                    }
+                ) {
+                    Text("Simpan", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { appToRename = null }) {
+                    Text("Batal", color = Color.Gray)
+                }
+            }
+        )
+    }
+
+    // Folder Options Dialog (Ganti Nama, Hapus Folder)
+    if (showFolderOptions) {
+        FolderOptionsDialog(
+            folder = currentFolder,
+            onDismiss = { showFolderOptions = false },
+            onRename = { showRenameFolderDialog = true },
+            onDelete = { showDeleteFolderConfirm = true }
+        )
+    }
+
+    // Rename Folder Dialog
+    if (showRenameFolderDialog) {
+        RenameFolderDialog(
+            folder = currentFolder,
+            onDismiss = { showRenameFolderDialog = false },
+            onConfirm = { newName ->
+                onRenameFolder(currentFolder, newName)
+            }
+        )
+    }
+
+    // Delete Folder Confirm Dialog
+    if (showDeleteFolderConfirm) {
+        DeleteFolderConfirmationDialog(
+            folder = currentFolder,
+            onDismiss = { showDeleteFolderConfirm = false },
+            onConfirm = {
+                onDeleteFolder(currentFolder)
+                onDismiss()
+            }
+        )
+    }
+
+    // Assign / Move / Remove App from Folder Dialog
+    appToAssignFolder?.let { targetApp ->
         AssignFolderDialog(
             app = targetApp,
             folders = folders,
-            onDismiss = { appToManage = null },
-            onAssign = { newFolder ->
-                onAssignFolder(targetApp, newFolder?.id)
-                appToManage = null
+            onDismiss = { appToAssignFolder = null },
+            onAssign = { targetFolder ->
+                onAssignFolder(targetApp, targetFolder?.id)
+                appToAssignFolder = null
             },
             onCreateNewFolder = {
                 showCreateFolderDialog = true
@@ -291,9 +605,9 @@ fun FolderContentSheet(
             onDismiss = { showCreateFolderDialog = false },
             onConfirm = { newFolder ->
                 onCreateFolder(newFolder)
-                appToManage?.let { targetApp ->
+                appToAssignFolder?.let { targetApp ->
                     onAssignFolder(targetApp, newFolder.id)
-                    appToManage = null
+                    appToAssignFolder = null
                 }
             }
         )

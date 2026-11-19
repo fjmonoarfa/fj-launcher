@@ -54,6 +54,7 @@ fun AppDrawerScreen(
     onUninstall: (AppItem) -> Unit,
     onCreateFolder: (AppFolder) -> Unit,
     onDeleteFolder: (AppFolder) -> Unit,
+    onRenameFolder: (AppFolder, String) -> Unit = { folder, newName -> onCreateFolder(folder.copy(name = newName)) },
     onAssignFolder: (AppItem, String?) -> Unit = { _, _ -> },
     onCloseDrawer: () -> Unit,
     modifier: Modifier = Modifier
@@ -65,6 +66,9 @@ fun AppDrawerScreen(
     var appToAssignFolder by remember { mutableStateOf<AppItem?>(null) }
     var showCreateFolderDialog by remember { mutableStateOf(false) }
     var selectedFolderForView by remember { mutableStateOf<AppFolder?>(null) }
+    var folderForOptions by remember { mutableStateOf<AppFolder?>(null) }
+    var folderToRename by remember { mutableStateOf<AppFolder?>(null) }
+    var folderToDeleteConfirm by remember { mutableStateOf<AppFolder?>(null) }
 
     // Visible apps (exclude hidden)
     val visibleApps = remember(apps) {
@@ -201,7 +205,8 @@ fun AppDrawerScreen(
                         DrawerFolderItem(
                             folder = folder,
                             count = count,
-                            onClick = { selectedFolderForView = folder }
+                            onClick = { selectedFolderForView = folder },
+                            onLongClick = { folderForOptions = folder }
                         )
                     }
 
@@ -304,7 +309,7 @@ fun AppDrawerScreen(
     // Folder View Modal
     selectedFolderForView?.let { folder ->
         val appsInFolder = remember(apps, folder.id) {
-            apps.filter { it.folderId == folder.id }
+            apps.filter { it.folderId == folder.id && !it.isHidden }
         }
         FolderContentSheet(
             folder = folder,
@@ -315,11 +320,64 @@ fun AppDrawerScreen(
                 selectedFolderForView = null
                 onAppClick(it)
             },
+            onTogglePin = onTogglePin,
+            onRenameApp = onRenameApp,
+            onHideApp = {
+                selectedFolderForView = null
+                onHideApp(it)
+            },
+            onOpenInfo = {
+                selectedFolderForView = null
+                onOpenInfo(it)
+            },
+            onUninstall = {
+                selectedFolderForView = null
+                onUninstall(it)
+            },
             onAssignFolder = onAssignFolder,
             onCreateFolder = onCreateFolder,
+            onRenameFolder = onRenameFolder,
             onDeleteFolder = {
                 onDeleteFolder(it)
                 selectedFolderForView = null
+            }
+        )
+    }
+
+    // Folder Options Dialog for Drawer Folder Item
+    folderForOptions?.let { folder ->
+        FolderOptionsDialog(
+            folder = folder,
+            onDismiss = { folderForOptions = null },
+            onRename = {
+                folderForOptions = null
+                folderToRename = folder
+            },
+            onDelete = {
+                folderForOptions = null
+                folderToDeleteConfirm = folder
+            }
+        )
+    }
+
+    folderToRename?.let { folder ->
+        RenameFolderDialog(
+            folder = folder,
+            onDismiss = { folderToRename = null },
+            onConfirm = { newName ->
+                onRenameFolder(folder, newName)
+                folderToRename = null
+            }
+        )
+    }
+
+    folderToDeleteConfirm?.let { folder ->
+        DeleteFolderConfirmationDialog(
+            folder = folder,
+            onDismiss = { folderToDeleteConfirm = null },
+            onConfirm = {
+                onDeleteFolder(folder)
+                folderToDeleteConfirm = null
             }
         )
     }
@@ -354,7 +412,7 @@ fun AppDrawerScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DrawerAppItem(
+internal fun DrawerAppItem(
     app: AppItem,
     isExpanded: Boolean,
     onItemClick: () -> Unit,
@@ -424,17 +482,22 @@ private fun DrawerAppItem(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DrawerFolderItem(
+internal fun DrawerFolderItem(
     folder: AppFolder,
     count: Int,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -470,7 +533,7 @@ private fun DrawerFolderItem(
 }
 
 @Composable
-private fun RowScope.InlineActionItem(
+internal fun RowScope.InlineActionItem(
     icon: ImageVector,
     label: String,
     tint: Color = Color.White,

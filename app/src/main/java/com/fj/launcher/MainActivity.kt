@@ -224,6 +224,9 @@ class MainActivity : ComponentActivity() {
                                     onDeleteFolder = { folder ->
                                         lifecycleScope.launch { preferenceManager.deleteFolder(folder.id) }
                                     },
+                                    onRenameFolder = { folder, newName ->
+                                        lifecycleScope.launch { preferenceManager.saveFolder(folder.copy(name = newName)) }
+                                    },
                                     onAssignFolder = { app, folderId ->
                                         lifecycleScope.launch { preferenceManager.assignAppToFolder(app.packageName, folderId) }
                                     },
