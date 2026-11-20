@@ -42,23 +42,28 @@ import java.util.Locale
 
 class LockscreenMatrixActivity : ComponentActivity() {
 
+    companion object {
+        var isLockscreenActive: Boolean = false
+    }
+
     private var userPresentReceiver: BroadcastReceiver? = null
+    private var glMatrixView: GLMatrixView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        isLockscreenActive = true
 
-        // Show when locked & turn screen on
+        // Show when locked, but DO NOT wake/turn on screen automatically
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
-            setTurnScreenOn(true)
+            setTurnScreenOn(false)
         } else {
             @Suppress("DEPRECATION")
-            window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-            )
+            window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
+            @Suppress("DEPRECATION")
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
         }
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Do NOT add FLAG_KEEP_SCREEN_ON so the screen can timeout naturally
 
         // Allow drawing behind system bars while keeping system status bar visible
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -84,15 +89,26 @@ class LockscreenMatrixActivity : ComponentActivity() {
             val preferences by preferenceManager.preferencesFlow.collectAsState(initial = LauncherPreferences())
             LockscreenContent(
                 preferences = preferences,
-                onDismiss = { dismissLockscreen() }
+                onDismiss = { dismissLockscreen() },
+                onGlViewCreated = { glMatrixView = it }
             )
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        glMatrixView?.onActivityResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        glMatrixView?.onActivityPause()
+    }
+
     private fun dismissLockscreen() {
         val km = getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            km?.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && km?.isKeyguardLocked == true) {
+            km.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
                 override fun onDismissSucceeded() {
                     finishAndRemoveTask()
                     @Suppress("DEPRECATION")
@@ -101,11 +117,7 @@ class LockscreenMatrixActivity : ComponentActivity() {
                 override fun onDismissError() {
                     finishAndRemoveTask()
                 }
-            }) ?: run {
-                finishAndRemoveTask()
-                @Suppress("DEPRECATION")
-                overridePendingTransition(0, android.R.anim.fade_out)
-            }
+            })
         } else {
             finishAndRemoveTask()
             @Suppress("DEPRECATION")
@@ -115,11 +127,15 @@ class LockscreenMatrixActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        isLockscreenActive = false
+        glMatrixView?.onActivityPause()
+        glMatrixView = null
         userPresentReceiver?.let {
             try {
                 unregisterReceiver(it)
             } catch (_: Exception) {}
         }
+        userPresentReceiver = null
     }
 
     @Deprecated("Deprecated in Java")
@@ -132,7 +148,8 @@ class LockscreenMatrixActivity : ComponentActivity() {
 @Composable
 private fun LockscreenContent(
     preferences: LauncherPreferences,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onGlViewCreated: (GLMatrixView) -> Unit
 ) {
     var currentTime by remember { mutableStateOf("") }
     var currentDate by remember { mutableStateOf("") }
@@ -183,6 +200,7 @@ private fun LockscreenContent(
         AndroidView(
             factory = { ctx ->
                 GLMatrixView(ctx).also { gv ->
+                    onGlViewCreated(gv)
                     gv.renderer.state.theme = preferences.matrixTheme
                     gv.renderer.state.mode = preferences.matrixMode
                     gv.renderer.state.speedMultiplier = preferences.matrixSpeed

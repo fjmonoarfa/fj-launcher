@@ -49,7 +49,6 @@
             android:name=".lockscreen.LockscreenMatrixActivity"
             android:exported="false"
             android:showWhenLocked="true"
-            android:turnScreenOn="true"
             android:inheritShowWhenLocked="true"
             android:launchMode="singleInstance"
             android:excludeFromRecents="true"

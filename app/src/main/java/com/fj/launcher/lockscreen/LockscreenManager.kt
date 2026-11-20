@@ -22,11 +22,16 @@ class LockscreenManager(private val context: Context) {
 
         screenOffReceiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context?, intent: Intent?) {
-                if (intent?.action == Intent.ACTION_SCREEN_OFF) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val prefs = preferenceManager.preferencesFlow.first()
-                        if (prefs.matrixLockscreenEnabled) {
-                            launchLockscreen(context)
+                when (intent?.action) {
+                    Intent.ACTION_SCREEN_OFF,
+                    Intent.ACTION_SCREEN_ON -> {
+                        if (!LockscreenMatrixActivity.isLockscreenActive) {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                val prefs = preferenceManager.preferencesFlow.first()
+                                if (prefs.matrixLockscreenEnabled && !LockscreenMatrixActivity.isLockscreenActive) {
+                                    launchLockscreen(context)
+                                }
+                            }
                         }
                     }
                 }
@@ -35,6 +40,7 @@ class LockscreenManager(private val context: Context) {
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
         }
         context.registerReceiver(screenOffReceiver, filter)
         isRegistered = true
