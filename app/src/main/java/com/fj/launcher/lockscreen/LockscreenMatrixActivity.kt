@@ -1,40 +1,40 @@
 package com.fj.launcher.lockscreen
 
+import android.app.AlarmManager
 import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import com.fj.launcher.data.PreferenceManager
 import com.fj.launcher.glmatrix.GLMatrixView
 import com.fj.launcher.model.LauncherPreferences
-import com.fj.launcher.model.MatrixTheme
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -60,11 +60,12 @@ class LockscreenMatrixActivity : ComponentActivity() {
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Fullscreen edge-to-edge
+        // Allow drawing behind system bars while keeping system status bar visible
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
-        insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        @Suppress("DEPRECATION")
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        @Suppress("DEPRECATION")
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
         // Listen for user unlock (e.g. fingerprint unlocked directly by hardware sensor)
         userPresentReceiver = object : BroadcastReceiver() {
@@ -135,50 +136,37 @@ private fun LockscreenContent(
 ) {
     var currentTime by remember { mutableStateOf("") }
     var currentDate by remember { mutableStateOf("") }
-    var batteryPct by remember { mutableIntStateOf(100) }
+    var nextAlarmTime by remember { mutableStateOf<String?>(null) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Update time & date every second
+    // Update time, date, and next alarm
     LaunchedEffect(preferences.is24HourClock) {
-        val timePattern = if (preferences.is24HourClock) "HH:mm" else "hh:mm a"
+        val timePattern = if (preferences.is24HourClock) "H:mm" else "h:mm"
         val timeFormat = SimpleDateFormat(timePattern, Locale.getDefault())
-        val dateFormat = SimpleDateFormat("EEEE, d MMMM", Locale("id", "ID"))
+        val dateFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
+        val alarmFormat = SimpleDateFormat(timePattern, Locale.getDefault())
+
         while (true) {
             val now = Date()
             currentTime = timeFormat.format(now)
             currentDate = dateFormat.format(now)
 
-            // Read battery
-            val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
-            bm?.let {
-                batteryPct = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            // Read next alarm
+            val am = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            val nextAlarm = am?.nextAlarmClock
+            nextAlarmTime = if (nextAlarm != null && nextAlarm.triggerTime > System.currentTimeMillis()) {
+                alarmFormat.format(Date(nextAlarm.triggerTime))
+            } else {
+                null
             }
 
             delay(1000)
         }
     }
 
-    // Theme color accent for text
-    val accentColor = when (preferences.matrixTheme) {
-        MatrixTheme.CLASSIC_GREEN -> Color(0xFF00FF41)
-        MatrixTheme.CYBERPUNK_CYAN -> Color(0xFF00E5FF)
-        MatrixTheme.GOLDEN_AMBER -> Color(0xFFFFB300)
-        MatrixTheme.BLOOD_RED -> Color(0xFFFF1744)
-        MatrixTheme.HACKER_WHITE -> Color.White
-    }
-
-    // Swipe up animation
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val arrowOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -12f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = EaseInOutQuad),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "arrow"
-    )
+    // Warm pastel peach / cream clock color matching Android 14 / Realme lockscreen
+    val clockColor = Color(0xFFFFD5A5)
 
     Box(
         modifier = Modifier
@@ -191,7 +179,7 @@ private fun LockscreenContent(
                 }
             }
     ) {
-        // GLMatrix live wallpaper background
+        // GLMatrix live background
         AndroidView(
             factory = { ctx ->
                 GLMatrixView(ctx).also { gv ->
@@ -202,69 +190,105 @@ private fun LockscreenContent(
                     gv.renderer.state.cameraSwayEnabled = preferences.matrix3DSway
                     gv.renderer.state.wavesEnabled = preferences.matrixWaves
                     gv.renderer.state.fogEnabled = preferences.matrixFog
-                    gv.renderer.state.dimmerAlpha = preferences.matrixDimmerAlpha.coerceAtMost(0.40f)
+                    gv.renderer.state.dimmerAlpha = preferences.matrixDimmerAlpha.coerceAtMost(0.35f)
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Top Clock & Info
+        // Top Lock & Clock & Date Section (matching uploaded lockscreen layout)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(top = 48.dp, start = 24.dp, end = 24.dp),
+                .padding(top = 18.dp, start = 24.dp, end = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Lock icon
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = "Lock",
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Big Clock Numbers (Warm pastel peach/cream)
             Text(
                 text = currentTime,
-                fontSize = 64.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace,
-                color = accentColor,
-                letterSpacing = 2.sp
+                fontSize = 86.sp,
+                fontWeight = FontWeight.Normal,
+                color = clockColor,
+                letterSpacing = (-1).sp,
+                lineHeight = 90.sp
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = currentDate,
-                fontSize = 17.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Normal
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "⚡ $batteryPct%",
-                fontSize = 14.sp,
-                color = Color(0xFFAAAAAA),
-                fontFamily = FontFamily.Monospace
-            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Date & Alarm row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = currentDate,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Normal
+                )
+
+                if (nextAlarmTime != null) {
+                    Icon(
+                        imageVector = Icons.Default.Alarm,
+                        contentDescription = "Alarm",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = nextAlarmTime!!,
+                        fontSize = 16.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Normal
+                    )
+                }
+            }
         }
 
-        // Bottom "Geser ke atas untuk membuka" Hint
-        Column(
+        // Bottom "Swipe up to open" & Shortcut Button
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 36.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+                .padding(bottom = 36.dp, start = 28.dp, end = 28.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Swipe up",
-                tint = accentColor,
-                modifier = Modifier
-                    .size(28.dp)
-                    .offset(y = arrowOffset.dp)
-            )
             Text(
-                text = "Geser ke atas untuk membuka",
-                color = Color(0xCCFFFFFF),
-                fontSize = 13.sp,
-                fontFamily = FontFamily.Monospace,
-                letterSpacing = 1.sp
+                text = "Swipe up to open",
+                color = Color(0xEEFFFFFF),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Normal,
+                modifier = Modifier.align(Alignment.Center)
             )
+
+            // Circular Quick Shortcut (Grid/Apps) Button
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFF333336),
+                modifier = Modifier
+                    .size(50.dp)
+                    .align(Alignment.CenterEnd)
+                    .clickable { onDismiss() }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.GridView,
+                        contentDescription = "Apps",
+                        tint = Color.White,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
         }
     }
 }
