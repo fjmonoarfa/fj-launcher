@@ -309,6 +309,24 @@ fun SettingsScreen(
                         onUpdatePreferences(preferences.copy(matrixDimmerAlpha = rounded))
                     }
                 )
+
+                SettingsValueRow(
+                    title = "Matrix lock screen",
+                    value = if (preferences.matrixLockscreenEnabled) "On" else "Off",
+                    onClick = {
+                        onUpdatePreferences(preferences.copy(matrixLockscreenEnabled = !preferences.matrixLockscreenEnabled))
+                    }
+                )
+
+                if (preferences.matrixLockscreenEnabled) {
+                    SettingsValueRow(
+                        title = "Preview lock screen",
+                        value = "Test Sekarang",
+                        onClick = {
+                            com.fj.launcher.lockscreen.LockscreenManager.launchLockscreen(context)
+                        }
+                    )
+                }
             }
 
             // CARD 5: Gestures

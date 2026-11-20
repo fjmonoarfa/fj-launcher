@@ -26,6 +26,7 @@ data class LauncherPreferences(
     val matrixWaves: Boolean = true,
     val matrixFog: Boolean = true,
     val matrixDimmerAlpha: Float = 0.50f,
+    val matrixLockscreenEnabled: Boolean = false,
     
     // Apps Drawer Settings
     val drawerSortOrder: SortOrder = SortOrder.A_TO_Z,

@@ -45,6 +45,7 @@ class PreferenceManager(private val context: Context) {
         val KEY_MATRIX_WAVES = booleanPreferencesKey("matrix_waves")
         val KEY_MATRIX_FOG = booleanPreferencesKey("matrix_fog")
         val KEY_MATRIX_DIMMER = floatPreferencesKey("matrix_dimmer")
+        val KEY_MATRIX_LOCKSCREEN_ENABLED = booleanPreferencesKey("matrix_lockscreen_enabled")
 
         // Drawer
         val KEY_DRAWER_SORT = stringPreferencesKey("drawer_sort")
@@ -101,6 +102,7 @@ class PreferenceManager(private val context: Context) {
             matrixWaves = prefs[KEY_MATRIX_WAVES] ?: true,
             matrixFog = prefs[KEY_MATRIX_FOG] ?: true,
             matrixDimmerAlpha = prefs[KEY_MATRIX_DIMMER] ?: 0.50f,
+            matrixLockscreenEnabled = prefs[KEY_MATRIX_LOCKSCREEN_ENABLED] ?: false,
             drawerSortOrder = runCatching {
                 SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
             }.getOrDefault(SortOrder.A_TO_Z),
@@ -148,6 +150,7 @@ class PreferenceManager(private val context: Context) {
                 matrixWaves = prefs[KEY_MATRIX_WAVES] ?: true,
                 matrixFog = prefs[KEY_MATRIX_FOG] ?: true,
                 matrixDimmerAlpha = prefs[KEY_MATRIX_DIMMER] ?: 0.50f,
+                matrixLockscreenEnabled = prefs[KEY_MATRIX_LOCKSCREEN_ENABLED] ?: false,
                 drawerSortOrder = runCatching {
                     SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
                 }.getOrDefault(SortOrder.A_TO_Z),
@@ -186,6 +189,7 @@ class PreferenceManager(private val context: Context) {
             prefs[KEY_MATRIX_WAVES] = updated.matrixWaves
             prefs[KEY_MATRIX_FOG] = updated.matrixFog
             prefs[KEY_MATRIX_DIMMER] = updated.matrixDimmerAlpha
+            prefs[KEY_MATRIX_LOCKSCREEN_ENABLED] = updated.matrixLockscreenEnabled
             prefs[KEY_DRAWER_SORT] = updated.drawerSortOrder.name
             prefs[KEY_DRAWER_FOLDER_FIRST] = updated.drawerFolderFirst
             prefs[KEY_AUTO_OPEN_KEYBOARD] = updated.autoOpenKeyboard
