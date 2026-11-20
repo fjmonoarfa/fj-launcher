@@ -4,35 +4,49 @@ import com.fj.launcher.model.MatrixTheme
 import java.util.concurrent.atomic.AtomicBoolean
 
 class GLMatrixState {
+    @Volatile
     var theme: MatrixTheme = MatrixTheme.CLASSIC_GREEN
         set(value) {
             field = value
             updateColors()
         }
 
+    @Volatile
     var speedMultiplier: Float = 1.0f
+    @Volatile
     var density: Float = 1.0f
+    @Volatile
     var cameraSwayEnabled: Boolean = true
+    @Volatile
     var dimmerAlpha: Float = 0.55f
+    @Volatile
     var mode: String = "matrix" // "matrix", "binary", "hexadecimal", "decimal", "dna"
+    @Volatile
     var wavesEnabled: Boolean = true
+    @Volatile
     var fogEnabled: Boolean = true
 
     val isPaused: AtomicBoolean = AtomicBoolean(false)
 
     // Current primary color RGB (0.0f - 1.0f)
+    @Volatile
     var primaryR: Float = 0.0f
         private set
+    @Volatile
     var primaryG: Float = 1.0f
         private set
+    @Volatile
     var primaryB: Float = 0.25f
         private set
 
     // Current leading head (brightest tip) color RGB (0.0f - 1.0f)
+    @Volatile
     var headR: Float = 0.2f
         private set
+    @Volatile
     var headG: Float = 1.0f
         private set
+    @Volatile
     var headB: Float = 0.35f
         private set
 

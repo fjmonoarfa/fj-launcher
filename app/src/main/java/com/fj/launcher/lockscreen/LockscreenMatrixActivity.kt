@@ -218,6 +218,16 @@ private fun LockscreenContent(
                     gv.renderer.state.dimmerAlpha = preferences.matrixDimmerAlpha.coerceAtMost(0.35f)
                 }
             },
+            update = { gv ->
+                gv.renderer.state.theme = preferences.matrixTheme
+                gv.renderer.state.mode = preferences.matrixMode
+                gv.renderer.state.speedMultiplier = preferences.matrixSpeed
+                gv.renderer.state.density = preferences.matrixDensity
+                gv.renderer.state.cameraSwayEnabled = preferences.matrix3DSway
+                gv.renderer.state.wavesEnabled = preferences.matrixWaves
+                gv.renderer.state.fogEnabled = preferences.matrixFog
+                gv.renderer.state.dimmerAlpha = preferences.matrixDimmerAlpha.coerceAtMost(0.35f)
+            },
             modifier = Modifier.fillMaxSize()
         )
 

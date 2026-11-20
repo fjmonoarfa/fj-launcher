@@ -83,7 +83,7 @@ class GLMatrixRenderer(
 
     // Vertex batching buffer
     private val floatsPerVertex = 9
-    private val maxQuads = 1800
+    private val maxQuads = 3500
     private val maxVertices = maxQuads * 4
     private val maxIndices = maxQuads * 6
 
@@ -201,21 +201,32 @@ class GLMatrixRenderer(
         }
     }
 
+    private fun adjustStripsToDensity() {
+        val targetCount = (45 * state.density).toInt().coerceIn(15, 95)
+        if (strips.size == targetCount) return
+
+        if (strips.size < targetCount) {
+            val toAdd = targetCount - strips.size
+            for (k in 0 until toAdd) {
+                val s = MatrixStrip(GRID_SIZE)
+                resetStrip(s)
+                s.spinnerY = random.nextFloat() * GRID_SIZE
+                if (random.nextBoolean()) {
+                    s.erasing = true
+                    s.spinnerSpeed /= 2f
+                }
+                strips.add(s)
+            }
+        } else {
+            while (strips.size > targetCount) {
+                strips.removeAt(strips.size - 1)
+            }
+        }
+    }
+
     private fun initStrips() {
         strips.clear()
-        val numStrips = (45 * state.density).toInt().coerceIn(25, 75)
-
-        for (i in 0 until numStrips) {
-            val s = MatrixStrip(GRID_SIZE)
-            resetStrip(s)
-            // Stagger initial strips randomly across screen so animation starts full
-            s.spinnerY = random.nextFloat() * GRID_SIZE
-            if (random.nextBoolean()) {
-                s.erasing = true
-                s.spinnerSpeed /= 2f
-            }
-            strips.add(s)
-        }
+        adjustStripsToDensity()
     }
 
     private fun tickAutoTrack() {
@@ -264,6 +275,8 @@ class GLMatrixRenderer(
         if (state.isPaused.get()) {
             return
         }
+
+        adjustStripsToDensity()
 
         tickAutoTrack()
 
