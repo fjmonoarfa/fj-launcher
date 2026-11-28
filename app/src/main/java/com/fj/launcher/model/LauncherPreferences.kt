@@ -31,6 +31,7 @@ data class LauncherPreferences(
     // Apps Drawer Settings
     val drawerSortOrder: SortOrder = SortOrder.A_TO_Z,
     val drawerFolderFirst: Boolean = true,
+    val drawerTransparency: Float = 0.50f,
     val autoOpenKeyboard: Boolean = false,
     
     // Appearance & Gestures

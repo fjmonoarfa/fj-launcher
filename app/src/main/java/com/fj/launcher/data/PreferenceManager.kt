@@ -50,6 +50,7 @@ class PreferenceManager(private val context: Context) {
         // Drawer
         val KEY_DRAWER_SORT = stringPreferencesKey("drawer_sort")
         val KEY_DRAWER_FOLDER_FIRST = booleanPreferencesKey("drawer_folder_first")
+        val KEY_DRAWER_TRANSPARENCY = floatPreferencesKey("drawer_transparency")
         val KEY_AUTO_OPEN_KEYBOARD = booleanPreferencesKey("auto_open_keyboard")
 
         // Appearance & Gestures
@@ -107,6 +108,7 @@ class PreferenceManager(private val context: Context) {
                 SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
             }.getOrDefault(SortOrder.A_TO_Z),
             drawerFolderFirst = prefs[KEY_DRAWER_FOLDER_FIRST] ?: true,
+            drawerTransparency = prefs[KEY_DRAWER_TRANSPARENCY] ?: 0.50f,
             autoOpenKeyboard = prefs[KEY_AUTO_OPEN_KEYBOARD] ?: false,
             themeMode = prefs[KEY_THEME_MODE] ?: "Dark",
             notificationBar = prefs[KEY_NOTIFICATION_BAR] ?: true,
@@ -155,6 +157,7 @@ class PreferenceManager(private val context: Context) {
                     SortOrder.valueOf(prefs[KEY_DRAWER_SORT] ?: SortOrder.A_TO_Z.name)
                 }.getOrDefault(SortOrder.A_TO_Z),
                 drawerFolderFirst = prefs[KEY_DRAWER_FOLDER_FIRST] ?: true,
+                drawerTransparency = prefs[KEY_DRAWER_TRANSPARENCY] ?: 0.50f,
                 autoOpenKeyboard = prefs[KEY_AUTO_OPEN_KEYBOARD] ?: false,
                 themeMode = prefs[KEY_THEME_MODE] ?: "Dark",
                 notificationBar = prefs[KEY_NOTIFICATION_BAR] ?: true,
@@ -192,6 +195,7 @@ class PreferenceManager(private val context: Context) {
             prefs[KEY_MATRIX_LOCKSCREEN_ENABLED] = updated.matrixLockscreenEnabled
             prefs[KEY_DRAWER_SORT] = updated.drawerSortOrder.name
             prefs[KEY_DRAWER_FOLDER_FIRST] = updated.drawerFolderFirst
+            prefs[KEY_DRAWER_TRANSPARENCY] = updated.drawerTransparency
             prefs[KEY_AUTO_OPEN_KEYBOARD] = updated.autoOpenKeyboard
             prefs[KEY_THEME_MODE] = updated.themeMode
             prefs[KEY_NOTIFICATION_BAR] = updated.notificationBar

@@ -111,10 +111,12 @@ fun AppDrawerScreen(
 
     val listState = rememberLazyListState()
 
+    val bgAlpha = (1f - preferences.drawerTransparency).coerceIn(0f, 1f)
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black) // Solid OLED Black: zero GPU overdraw during scroll
+            .background(Color.Black.copy(alpha = bgAlpha))
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
@@ -315,6 +317,7 @@ fun AppDrawerScreen(
             folder = folder,
             appsInFolder = appsInFolder,
             folders = folders,
+            drawerTransparency = preferences.drawerTransparency,
             onDismiss = { selectedFolderForView = null },
             onAppClick = {
                 selectedFolderForView = null

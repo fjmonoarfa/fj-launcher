@@ -131,7 +131,7 @@ class MainActivity : ComponentActivity() {
                         gv.renderer.state.fogEnabled = preferences.matrixFog
                         gv.renderer.state.dimmerAlpha = preferences.matrixDimmerAlpha
 
-                        if (currentScreen == LauncherScreen.HOME && preferences.matrixEnabled) {
+                        if ((currentScreen == LauncherScreen.HOME || currentScreen == LauncherScreen.DRAWER) && preferences.matrixEnabled) {
                             gv.resumeRendering()
                         } else {
                             gv.pauseRendering()

@@ -356,6 +356,22 @@ fun SettingsScreen(
             SettingsCard {
                 SectionTitle(title = "Drawer & Folders")
 
+                var currentDrawerTransparency by remember(preferences.drawerTransparency) {
+                    mutableFloatStateOf(preferences.drawerTransparency)
+                }
+                SettingsSliderRow(
+                    title = "App list transparency",
+                    valueLabel = "${(currentDrawerTransparency * 100).toInt()}%",
+                    value = currentDrawerTransparency,
+                    valueRange = 0.0f..1.0f,
+                    steps = 20,
+                    onValueChange = { currentDrawerTransparency = it },
+                    onValueChangeFinished = {
+                        val rounded = Math.round(currentDrawerTransparency * 100f) / 100f
+                        onUpdatePreferences(preferences.copy(drawerTransparency = rounded))
+                    }
+                )
+
                 SettingsValueRow(
                     title = "Folder first",
                     value = if (preferences.drawerFolderFirst) "On" else "Off",

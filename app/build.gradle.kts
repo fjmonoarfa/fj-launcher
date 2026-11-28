@@ -105,6 +105,18 @@ tasks.register("copyApkToRoot") {
     }
 }
 
+tasks.register("cleanDesktopIni") {
+    doLast {
+        rootProject.fileTree(mapOf("dir" to rootProject.rootDir, "include" to listOf("**/desktop.ini"))).forEach {
+            it.delete()
+        }
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("cleanDesktopIni")
+}
+
 afterEvaluate {
     tasks.findByName("assembleDebug")?.finalizedBy("copyApkToRoot")
 }

@@ -361,6 +361,7 @@ fun FolderContentSheet(
     folder: AppFolder,
     appsInFolder: List<AppItem>,
     folders: List<AppFolder> = emptyList(),
+    drawerTransparency: Float = 0.50f,
     onDismiss: () -> Unit,
     onAppClick: (AppItem) -> Unit,
     onTogglePin: (AppItem) -> Unit = {},
@@ -386,9 +387,10 @@ fun FolderContentSheet(
     var showRenameFolderDialog by remember { mutableStateOf(false) }
     var showDeleteFolderConfirm by remember { mutableStateOf(false) }
 
+    val sheetAlpha = (1f - drawerTransparency * 0.4f).coerceIn(0.6f, 1f)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF141414),
+        containerColor = Color(0xFF141414).copy(alpha = sheetAlpha),
         contentColor = Color.White
     ) {
         Column(
