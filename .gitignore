@@ -9,10 +9,16 @@
 
 # Build artifacts
 *.apk
+*.apk*
 *.aab
 *.ap_
 output-metadata.json
 
 # Scratch scripts
 scratch/
+
+# OS generated files
+desktop.ini
+[Dd]esktop.ini
+
 
